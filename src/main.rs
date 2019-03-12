@@ -1,46 +1,46 @@
-#![feature(rustc_private)]
-extern crate getopts;
-use getopts::Options;
+use clap::{Arg, App};
 use serde::{Serialize, Deserialize};
 use std::fs;
-use std::env;
 
 
-#[derive(Deserialize, Serialize)]
-struct Basics {
-    name: String,
-    label: String
-}
-
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all="camelCase")]
 struct Location {
     address: String,
-    postal_code: u32,
+    postal_code: String,
     city: String,
     country_code: String,
     region: String
 }
 
-#[derive(Deserialize, Serialize)]
-struct Resume {
-    basics: Basics,
+#[derive(Debug, Deserialize, Serialize)]
+struct Basics {
+    name: String,
+    label: String,
     location: Location
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+struct Resume {
+    basics: Basics,
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
-    let args: Vec<String> = env::args().collect();
-    let mut options = Options::new();
+    let matches = App::new("ResuMaester")
+                    .about("Resume management for a paperless world")
+                    .arg(Arg::with_name("file")
+                            .short("f")
+                            .long("file")
+                            .value_name("FILE")
+                            .help("Ingests existing JSON resume")
+                            .takes_value(true))
+                    .get_matches();
 
-    options.optopt("f", "file", "use existing file", "FILE");
+    let file_path = matches.value_of("file").unwrap();
+    let file_contents = fs::read_to_string(file_path).unwrap();
+    let resume: Resume = serde_json::from_str(&file_contents).unwrap();
 
-    let matches = match options.parse(&args[1..]) {
-        Ok(arg) => { arg }
-        Err(err) => { panic!(err.to_string()) }
-    };
+    println!("{:?}", resume);
 
-    let filepath = matches.opt_str("f").unwrap();
-    let file_contents = fs::read_to_string(filepath).unwrap();
-    
-    println!("{:?}", file_contents);
     Ok(())
 }

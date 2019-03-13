@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use std::fs;
+use std::{fs, io};
 use std::path::Path;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -69,7 +69,16 @@ pub struct Resume {
     languages: Vec<Language>
 }
 
-pub fn extract<T: AsRef<Path>>(file_path: T) -> Option<Resume>{
-    let file_contents = fs::read_to_string(file_path).unwrap(); 
-    serde_json::from_str(&file_contents).ok()
+#[derive(Debug)]
+pub enum ExtractionError {
+    IOError(io::Error),
+    JSONParseError(serde_json::error::Error)
+}
+
+pub fn extract<T: AsRef<Path>>(file_path: T) -> Result<Resume, ExtractionError> {
+    fs::read_to_string(file_path)
+        .map_err(ExtractionError::IOError)
+        .and_then(|file_contents| {
+            serde_json::from_str(&file_contents).map_err(ExtractionError::JSONParseError)
+        })
 }

@@ -14,10 +14,15 @@ fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
                             .takes_value(true))
                     .get_matches();
 
-    if let Some(file_path) = matches.value_of("file") {
-        println!("{:?}", json::extract(file_path));
-    }
+    let file_path = matches.value_of("file").unwrap_or("./resume.json");
 
+    match json::extract(file_path) {
+        Ok(resume ) => println!("{:?}", resume),
+        Err(error) => match error {
+            json::ExtractionError::IOError(_) => println!("JSON resume not found! Would you like to create a new resume instead?"),
+            json::ExtractionError::JSONParseError(parse_error) => println!("{:?}", parse_error)
+        }
+    }
 
     Ok(())
 }

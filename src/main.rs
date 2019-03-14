@@ -1,9 +1,13 @@
+mod config;
 mod json;
+mod now;
 
 use clap::{App, Arg};
 use console::{style, Term};
 use dialoguer::Confirmation;
 use json::ExtractionError::{IOError, JSONParseError};
+use now::deploy;
+use std::error;
 
 fn handle_missing_resume() {
     let term = Term::stdout();
@@ -23,7 +27,9 @@ fn handle_missing_resume() {
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
+fn main() -> Result<(), Box<dyn error::Error + 'static>> {
+    let config = config::handle().unwrap();
+
     let matches = App::new("ResuMaester")
         .about("Resume management for a paperless world")
         .arg(
@@ -39,7 +45,10 @@ fn main() -> Result<(), Box<dyn std::error::Error + 'static>> {
     let file_path = matches.value_of("file").unwrap_or("./resume.json");
 
     match json::extract(file_path) {
-        Ok(resume) => println!("{:?}", resume),
+        Ok(resume) => match deploy(resume, config) {
+            Ok(response) => println!("{:?}", response),
+            Err(deploy_err) => println!("{:?}", deploy_err),
+        },
         Err(error) => match error {
             IOError(_) => handle_missing_resume(),
             JSONParseError(parse_error) => println!("{:?}", parse_error),

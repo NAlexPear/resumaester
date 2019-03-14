@@ -8,6 +8,8 @@ version = "0.1.0"
 clap = "2.3"
 console = "0.7.5"
 dialoguer = "0.3.0"
+dirs = "1.0.5"
+reqwest = "0.9.11"
 serde_json = "1.0"
 
 [dependencies.serde]
